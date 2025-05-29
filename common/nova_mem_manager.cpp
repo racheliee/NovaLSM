@@ -70,6 +70,7 @@ namespace nova {
             slab_classes_[i].size = size;
             slab_classes_[i].nitems_per_slab = slab_size / size;
             if (pid == 0) {
+		    std::cout<<"로그 출력\n";    
                 NOVA_LOG(INFO) << "slab class " << i << " size:" << size
                                << " nitems:"
                                << slab_size / size;
@@ -79,6 +80,7 @@ namespace nova {
                 size = slab_size;
             }
         }
+	std::cout << "trying to divide\n";
         uint64_t ndataslabs = data_size / slab_size;
         if (pid == 0) {
             NOVA_LOG(INFO)

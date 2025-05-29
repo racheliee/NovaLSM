@@ -1,12 +1,12 @@
 #!/bin/bash
-home_dir="/proj/bg-PG0/haoyu"
-# home_dir="/proj/BG/haoyu"
+home_dir="/nova/NovaLSM" ## Changed
+
 config_dir="$home_dir/config"
 db_dir="$home_dir/db"
 script_dir="$home_dir/scripts"
 cache_bin_dir="$home_dir/nova"
-client_bin_dir="/tmp/YCSB-Nova"
-results="/tmp/results"
+client_bin_dir="nova/NovaLSM-YCSB-Client" ## Changed
+results="/nova/results" ## Changed
 recordcount="$1"
 exp_results_dir="$home_dir/nova-tutorial-backup-$recordcount"
 dryrun="$2"
@@ -14,7 +14,7 @@ dryrun="$2"
 mkdir -p $results
 mkdir -p $exp_results_dir
 
-nservers="3"
+nservers="5"
 nclients="6"
 
 # YCSB
@@ -44,7 +44,7 @@ cc_nranges_per_server="1"
 cc_log_buf_size="1024"
 max_stoc_file_size_mb="4"
 sstable_size_mb="2"
-cc_stoc_files_path="/db/stoc_files"
+cc_stoc_files_path="/nova-mnt" ## Changed
 ltc_num_stocs_scatter_data_blocks="3"
 num_memtable_partitions="32"
 number_of_ltcs="3"
@@ -69,37 +69,35 @@ function run_bench() {
 	servers=()
 	clis=()
 	machines=()
+
 	i=0
 	n=0
-	while [ $n -lt $nservers ]
-	do
-		# if [[ $i == "9" ]]; then
-		# 	i=$((i+1))
-		# 	continue	
-		# fi
-		servers+=("node-$i")
-		i=$((i+1))
-		n=$((n+1))
+	nums=(1 2 4 5 6)
+	while [ $n -lt $nservers ]; do
+	    servers+=("eternity${nums[$i]}")
+	    i=$((i+1))
+	    n=$((n+1))
 	done
 
 	i=0
 	n=0
 	while [ $n -lt $nclients ]
 	do
-		id=$((nmachines-1-i))
+		#id=$((nmachines-1-i))
 		# if [[ $id == "9" ]]; then
 		# 	i=$((i+1))
 		# 	continue	
 		# fi
-		clis+=("node-$id")
+		#clis+=("node-$id")
 		i=$((i+1))
 		n=$((n+1))
 	done
+	clis+=("node-8")
 
-	for ((i=0;i<nmachines;i++));
+	for i in 1 2 4 5 6 8
 	do
-		id=$((i))
-		machines+=("node-$id")
+		id=$i
+		machines+=("eternity$id")
 	done
 
 	echo ${clis[@]}
@@ -274,7 +272,7 @@ num_rdma_bg_workers="16"
 num_compaction_workers="128"
 num_storage_workers="128"
 
-nservers="11"
+nservers="5"
 number_of_ltcs="1"
 nclients="5"
 dist="zipfian"
@@ -336,7 +334,7 @@ exp_seconds_to_fail_stoc="-1"
 fail_stoc_id="-1"
 
 number_of_ltcs="3"
-nservers="6"
+nservers="5"
 num_memtable_partitions="64"
 dist="uniform"
 num_sstable_replicas="1"

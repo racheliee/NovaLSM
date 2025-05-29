@@ -1,0 +1,6 @@
+/nova/results/sigmod-leveldb-1-server-logging-10000000/nova-d-uniform-w-workloadw-ltc-1-log-disk-l0-10240-np-1-ss-16-c-10
+uniform,W100,1,disk,10240,1,16,10 0 0 0 0 0 0
+['d', 'w', 'ltc', 'log', 'l0', 'np', 'ss', 'c']
+Distribution,Workload,Number of LTCs,Log Method,L0 size (GB),Number of memtable partitions,SSTable size,Cardinality,Fetched log records,Number of waits,Wait duration,Stall duration,number of L0 SSTables,database size (MB),memtable hit rate,Total MemTable Size,Written MemTable Size,Reduction,Total Disk Reads,Total Disk Writes,Average throughput,peak_thpt,read_avg,read_p95,read_p99,write_avg,write_p95,write_p99,
+uniform,W100,1,disk,10240,1,16,10,0,0,0,0,0,0,0,0,0,0,0.0,0.0,0,0,,,,,,,
+

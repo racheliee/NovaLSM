@@ -12,7 +12,7 @@
 #include "memtable.h"
 #include "version_set.h"
 #include "flush_order.h"
-
+#include <cmath>
 #define SUBRANGE_WARMUP_NPUTS 1000000
 #define SUBRANGE_MAJOR_REORG_INTERVAL 1000000
 #define SUBRANGE_MINOR_REORG_INTERVAL 100000

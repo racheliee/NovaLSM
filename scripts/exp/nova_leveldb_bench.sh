@@ -1,14 +1,14 @@
 #!/bin/bash
-home_dir="/proj/bg-PG0/haoyu"
+home_dir="/nova/NovaLSM"
 # home_dir="/proj/BG/haoyu"
 config_dir="$home_dir/config"
 db_dir="$home_dir/db"
 script_dir="$home_dir/scripts"
 cache_bin_dir="$home_dir/nova"
-client_bin_dir="/tmp/YCSB-Nova"
-results="/tmp/results"
+client_bin_dir="/nova/NovaLSM-YCSB-Client" #editted /tmp/YCSB-Nova -> /nova/NovaLSM-YCSB-Client
+results="/nova/results"
 recordcount="$1"
-exp_results_dir="$home_dir/sigmod-leveldb-1-server-logging-$recordcount"
+exp_results_dir="/nova/results/sigmod-leveldb-1-server-logging-$recordcount"
 dryrun="$2"
 
 
@@ -67,16 +67,18 @@ function run_bench() {
 	
 	i=0
 	n=0
+	nums=(1 2 4 5 6 8)
 	while [ $n -lt $nservers ]
 	do
 		# if [[ $i == "2" ]]; then
 		# 	i=$((i+1))
 		# 	continue
 		# fi
-		servers+=("node-$i")
+		servers+=("eternity${nums[$i]}")
 		i=$((i+1))
 		n=$((n+1))
 	done
+
 	n=0
 	i=$((nmachines-1))
 	while [ $n -lt $nclients ]
@@ -85,15 +87,18 @@ function run_bench() {
 		# 	i=$((i-1))
 		# 	continue
 		# fi
-		clis+=("node-$i")
+		clis+=("eternity${nums[$i]}")
 		i=$((i-1))
 		n=$((n+1))
 	done
-
-	for ((i=0;i<nmachines;i++));
+	
+	i=0
+	n=0
+	while [ $n -lt $nmachines ]
 	do
-		id=$((i))
-		machines+=("node-$id")
+		machines+=("eternity${nums[$i]}")
+		i=$((i+1))
+		n=$((n+1))
 	done
 
 	echo ${clis[@]}
@@ -134,7 +139,7 @@ function run_bench() {
 	if [[ $dryrun == "true" ]]; then
 		return
 	fi
-
+	
 	for m in ${machines[@]}
 	do
 		echo "remove $results at machine $m"
@@ -172,8 +177,11 @@ function run_bench() {
 	do
 		echo "creating servers on $s"
 		nova_rdma_port=$((rdma_port))
-		cmd="stdbuf --output=0 --error=0 ./leveldb_main --level=$level --l0_start_compaction_mb=$l0_start_compaction_mb --l0_stop_write_mb=$l0_stop_write_mb --sstable_mode=$sstable_mode --block_cache_mb=$block_cache_mb --db_path=$db_path --write_buffer_size_mb=$write_buffer_size_mb --persist_log_records_mode=$persist_log_record --log_buf_size=$log_buf_size --servers=$nova_servers --server_id=$server_id --recordcount=$recordcount --data_partition_alg=$partition --num_conn_workers=$nconn_workers --num_async_workers=$nasync_workers --num_compaction_workers=$ncompaction_workers --cache_size_gb=$cache_size_gb --use_fixed_value_size=$value_size --rdma_port=$nova_rdma_port --rdma_max_msg_size=$rdma_max_msg_size --rdma_max_num_sends=$rdma_max_num_sends --rdma_doorbell_batch_size=8 --rdma_pq_batch_size=8 --enable_rdma=$enable_rdma --config_path=$config_path --enable_load_data=true --profiler_file_path=$profiler_file_path --sstable_size_mb=$sstable_size_mb"
+		cmd="stdbuf --output=0 --error=0 /nova/a/NovaLSM/leveldb_main --level=$level --l0_start_compaction_mb=$l0_start_compaction_mb --l0_stop_write_mb=$l0_stop_write_mb --sstable_mode=$sstable_mode --block_cache_mb=$block_cache_mb --db_path=$db_path --write_buffer_size_mb=$write_buffer_size_mb --persist_log_records_mode=$persist_log_record --log_buf_size=$log_buf_size --servers=$nova_servers --server_id=$server_id --recordcount=$recordcount --data_partition_alg=$partition --num_conn_workers=$nconn_workers --num_async_workers=$nasync_workers --num_compaction_workers=$ncompaction_workers --cache_size_gb=$cache_size_gb --use_fixed_value_size=$value_size --rdma_port=$nova_rdma_port --rdma_max_msg_size=$rdma_max_msg_size --rdma_max_num_sends=$rdma_max_num_sends --rdma_doorbell_batch_size=8 --rdma_pq_batch_size=8 --enable_rdma=$enable_rdma --config_path=$config_path --enable_load_data=true --profiler_file_path=$profiler_file_path --sstable_size_mb=$sstable_size_mb"
 		echo "$cmd"
+		
+		ssh $s "test -x $cache_bin_dir/leveldb_main && echo OK || echo 'ERROR: leveldb_main is missing or not executable'"
+
 		ssh -oStrictHostKeyChecking=no $s "rm -rf $db_path && mkdir -p $db_path && cd $cache_bin_dir && $cmd >& $results/server-$s-out &" &
 		server_id=$((server_id+1))
 		nova_rdma_port=$((nova_rdma_port+1))
@@ -207,9 +215,10 @@ function run_bench() {
 		for i in $(seq 1 $nclients_per_server);
 		do
 			echo "creating client on $c-$i"
-			cmd="stdbuf --output=0 --error=0 bash $script_dir/run_ycsb.sh $nthreads $nova_servers $debug $partition $recordcount $maxexecutiontime $dist $value_size $workload $config_path $cardinality $operationcount $zipfianconstant 0"
+			cmd="stdbuf --output=0 --error=0 sudo bash $script_dir/exp/run_ycsb.sh $nthreads $nova_servers $debug $partition $recordcount $maxexecutiontime $dist $value_size $workload $config_path $cardinality $operationcount $zipfianconstant 0"
 			echo "$cmd"
-			ssh -oStrictHostKeyChecking=no $c "cd $client_bin_dir && $cmd >& $results/client-$c-$i-out &" &
+			ssh $c "test -x $script_dir/exp/run_ycsb.sh && echo OK || echo MISSING or NO EXEC"			
+			ssh -oStrictHostKeyChecking=no $c "cd $client_bin_dir && $cmd >& $results/client-$c-$i-out &"
 		done
 	done
 	
@@ -327,29 +336,29 @@ zipfianconstant="0.99"
 dist="zipfian"
 
 nservers="1"
-nmachines="2"
+nmachines="3"
 
 nclients="1"
 nclients_per_server="5"
 nthreads="512"
 maxexecutiontime="600"
-for nranges_per_server in "1" "64"
+for nranges_per_server in "1" #"64"
 do
-l0_start_compaction_mb="4096"
-l0_stop_write_mb=$((10*1024))
-l0_start_compaction_mb=$((l0_start_compaction_mb/nranges_per_server))
-l0_stop_write_mb=$((l0_stop_write_mb/nranges_per_server))
+	l0_start_compaction_mb="4096"
+	l0_stop_write_mb=$((10*1024))
+	l0_start_compaction_mb=$((l0_start_compaction_mb/nranges_per_server))
+	l0_stop_write_mb=$((l0_stop_write_mb/nranges_per_server))
 
-for persist_log_record in "disk" "none"
-do
-for dist in "uniform" "zipfian" 
-do
-for workload in "workloadw" "workloada" "workloade"
-do
-run_bench
-done
-done
-done
+	for persist_log_record in "disk" #"none"
+	do
+		for dist in "uniform" #"zipfian" 
+		do
+			for workload in "workloadw" #"workloada" "workloade"
+			do
+			run_bench
+			done
+		done
+	done
 done
 
-python /proj/bg-PG0/haoyu/scripts/parse_ycsb_nova_leveldb.py $nmachines $exp_results_dir > stats_leveldb_servers_ranges_out_$recordcount
+python /nova/NovaLSM/scripts/exp/parse_ycsb_nova_leveldb.py $nmachines $exp_results_dir > stats_leveldb_servers_ranges_out_$recordcount

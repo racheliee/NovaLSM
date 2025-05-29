@@ -5,7 +5,7 @@
 #include <mutex>
 #include <set>
 #include <iterator>
-
+#include <functional>
 #include "qp.hpp"
 
 namespace rdmaio {
