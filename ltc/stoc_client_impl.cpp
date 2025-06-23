@@ -690,7 +690,16 @@ namespace leveldb {
                                                  uint32_t replica_id,
                                                  uint32_t size,
                                                  FileInternalType internal_type) {
-        NOVA_ASSERT(stoc_id != nova::NovaConfig::config->my_server_id);
+        // 여기부터 연우가 다시 등장!!
+        if(stoc_file_id == nullptr){
+            fprintf(stderr, "ERROR: stoc_file_id is NULL in InitiateAppendBlock\n");
+            fprintf(stderr, "→ dbname: %s, file_number: %ld, size: %lu\n",
+                            dbname.c_str(), file_number, size);
+            assert(false && "Null stoc_file_id passed to InitiateAppendBlock");
+        }
+        // 연우는 여.기.까.지. 였습니다
+	    
+	NOVA_ASSERT(stoc_id != nova::NovaConfig::config->my_server_id);
         uint32_t req_id = current_req_id_;
         StoCRequestContext context = {};
         context.done = false;

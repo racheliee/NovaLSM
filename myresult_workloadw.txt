@@ -1,0 +1,5 @@
+/nova/NovaLSM/config/nova-1-server-1-range-100000000-copy: line 1: config-0: command not found
+/nova/NovaLSM/config/nova-1-server-1-range-100000000-copy: line 2: 0: command not found
+/nova/NovaLSM/config/nova-1-server-1-range-100000000-copy: line 3: 0: command not found
+/nova/NovaLSM/config/nova-1-server-1-range-100000000-copy: line 4: 0: command not found
+/nova/NovaLSM/config/nova-1-server-1-range-100000000-copy: line 5: 0,100000000,0,0: command not found

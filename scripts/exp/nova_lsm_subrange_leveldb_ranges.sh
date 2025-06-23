@@ -1,14 +1,14 @@
 #!/bin/bash
-home_dir="/proj/bg-PG0/haoyu"
+home_dir="/nova/NovaLSM"
 # home_dir="/proj/BG/haoyu"
 config_dir="$home_dir/config"
 db_dir="$home_dir/db"
 script_dir="$home_dir/scripts"
 cache_bin_dir="$home_dir/nova"
-client_bin_dir="/tmp/YCSB-Nova"
-results="/tmp/results"
+client_bin_dir="/nova/NovaLSM-YCSB-Client"
+results="/nova/results"
 recordcount="$1"
-exp_results_dir="$home_dir/nov-7-$recordcount"
+exp_results_dir="/nova/results/nov-7-$recordcount"
 dryrun="$2"
 
 mkdir -p $results
@@ -93,6 +93,10 @@ function run_bench() {
 		machines+=("node-$id")
 	done
 
+	servers="eternity1"
+	clis="eternity2"
+	machines=("eternity1" "eternity2")
+
 	echo ${clis[@]}
 	echo ${servers[@]}
 	echo ${machines[@]}
@@ -129,7 +133,7 @@ function run_bench() {
 	# echo $cmd
 	# eval $cmd
 	number_of_stocs=$((nservers))
-	ltc_config_path="$config_dir/nova-shared-nrecords-200000000-nltc-1-nstoc-1-nranges-1-zipfian-0.00-read-1"
+	ltc_config_path="$config_dir/nova-shared-nrecords-10000000-nltc-1-nstoc-1-nranges-1-zipfian-0.00-read-1"
 	
 	db_path="/db/nova-db-$recordcount-$value_size"
 	echo "$nova_servers $ltc_config_path $db_path"
@@ -178,7 +182,7 @@ function run_bench() {
 	do
 		echo "creating server on $s"
 		nova_rdma_port=$((rdma_port))
-		cmd="stdbuf --output=0 --error=0 ./nova_server_main --use_ordered_flush=$ordered_flush --level=$level --l0_start_compaction_mb=$l0_start_compaction_mb --subrange_no_flush_num_keys=$subrange_no_flush_num_keys --enable_detailed_db_stats=$enable_detailed_db_stats --major_compaction_type=$major_compaction_type --major_compaction_max_parallism=$major_compaction_max_parallism --major_compaction_max_tables_in_a_set=$major_compaction_max_tables_in_a_set --enable_flush_multiple_memtables=$enable_flush_multiple_memtables --recover_dbs=$recover_dbs --num_recovery_threads=$num_recovery_threads  --sampling_ratio=1 --zipfian_dist_ref_counts=$zipfian_dist_file_path --client_access_pattern=$dist  --memtable_type=static_partition --enable_subrange=$enable_subrange --num_log_replicas=$num_log_replicas --log_record_mode=$log_record_mode --scatter_policy=$scatter_policy --number_of_ltcs=$number_of_ltcs --enable_range_index=$enable_range_index --enable_lookup_index=$enable_lookup_index --l0_stop_write_mb=$l0_stop_write_mb --num_memtable_partitions=$num_memtable_partitions --num_memtables=$num_memtables --num_rdma_bg_workers=$num_rdma_bg_workers --db_path=$db_path --num_storage_workers=$num_storage_workers --stoc_files_path=$cc_stoc_files_path --max_stoc_file_size_mb=$max_stoc_file_size_mb --sstable_size_mb=$sstable_size_mb --ltc_num_stocs_scatter_data_blocks=$ltc_num_stocs_scatter_data_blocks --all_servers=$nova_servers --server_id=$server_id --mem_pool_size_gb=$mem_pool_size_gb --use_fixed_value_size=$value_size --ltc_config_path=$ltc_config_path --ltc_num_client_workers=$cc_nconn_workers --num_rdma_fg_workers=$num_rdma_fg_workers --num_compaction_workers=$num_compaction_workers --block_cache_mb=$block_cache_mb --row_cache_mb=$row_cache_mb --memtable_size_mb=$memtable_size_mb --cc_log_buf_size=$cc_log_buf_size --rdma_port=$rdma_port --rdma_max_msg_size=$rdma_max_msg_size --rdma_max_num_sends=$rdma_max_num_sends --rdma_doorbell_batch_size=$rdma_doorbell_batch_size --enable_rdma=$enable_rdma --enable_load_data=$enable_load_data --use_local_disk=$use_local_disk"
+		cmd="stdbuf --output=0 --error=0 /nova/NovaLSM/nova_server_main --use_ordered_flush=$ordered_flush --level=$level --l0_start_compaction_mb=$l0_start_compaction_mb --subrange_no_flush_num_keys=$subrange_no_flush_num_keys --enable_detailed_db_stats=$enable_detailed_db_stats --major_compaction_type=$major_compaction_type --major_compaction_max_parallism=$major_compaction_max_parallism --major_compaction_max_tables_in_a_set=$major_compaction_max_tables_in_a_set --enable_flush_multiple_memtables=$enable_flush_multiple_memtables --recover_dbs=$recover_dbs --num_recovery_threads=$num_recovery_threads  --sampling_ratio=1 --zipfian_dist_ref_counts=$zipfian_dist_file_path --client_access_pattern=$dist  --memtable_type=static_partition --enable_subrange=$enable_subrange --num_log_replicas=$num_log_replicas --log_record_mode=$log_record_mode --scatter_policy=$scatter_policy --number_of_ltcs=$number_of_ltcs --enable_range_index=$enable_range_index --enable_lookup_index=$enable_lookup_index --l0_stop_write_mb=$l0_stop_write_mb --num_memtable_partitions=$num_memtable_partitions --num_memtables=$num_memtables --num_rdma_bg_workers=$num_rdma_bg_workers --db_path=$db_path --num_storage_workers=$num_storage_workers --stoc_files_path=$cc_stoc_files_path --max_stoc_file_size_mb=$max_stoc_file_size_mb --sstable_size_mb=$sstable_size_mb --ltc_num_stocs_scatter_data_blocks=$ltc_num_stocs_scatter_data_blocks --all_servers=$nova_servers --server_id=$server_id --mem_pool_size_gb=$mem_pool_size_gb --use_fixed_value_size=$value_size --ltc_config_path=$ltc_config_path --ltc_num_client_workers=$cc_nconn_workers --num_rdma_fg_workers=$num_rdma_fg_workers --num_compaction_workers=$num_compaction_workers --block_cache_mb=$block_cache_mb --row_cache_mb=$row_cache_mb --memtable_size_mb=$memtable_size_mb --cc_log_buf_size=$cc_log_buf_size --rdma_port=$rdma_port --rdma_max_msg_size=$rdma_max_msg_size --rdma_max_num_sends=$rdma_max_num_sends --rdma_doorbell_batch_size=$rdma_doorbell_batch_size --enable_rdma=$enable_rdma --enable_load_data=$enable_load_data --use_local_disk=$use_local_disk"
 		echo "$cmd"
 		ssh -oStrictHostKeyChecking=no $s "mkdir -p $cc_stoc_files_path && mkdir -p $db_path && cd $cache_bin_dir && $cmd >& $results/server-$s-out &" &
 		server_id=$((server_id+1))
@@ -202,7 +206,7 @@ function run_bench() {
 		for i in $(seq 1 $nclients_per_server);
 		do
 			echo "creating client on $c-$i"
-			cmd="stdbuf --output=0 --error=0 bash $script_dir/run_ycsb.sh $nthreads $nova_all_servers $debug $partition $recordcount $maxexecutiontime $dist $value_size $workload $ltc_config_path $cardinality $operationcount $zipfianconstant 0"
+			cmd="stdbuf --output=0 --error=0 bash $script_dir/exp/run_ycsb.sh $nthreads $nova_all_servers $debug $partition $recordcount $maxexecutiontime $dist $value_size $workload $ltc_config_path $cardinality $operationcount $zipfianconstant 0"
 			echo "$cmd"
 			ssh -oStrictHostKeyChecking=no $c "cd $client_bin_dir && $cmd >& $results/client-$c-$i-out &" &
 		done
@@ -353,8 +357,8 @@ enable_load_data="false"
 l0_start_compaction_mb="4096"
 l0_stop_write_mb=$((10*1024))
 nservers="1"
-nmachines="5"
-nclients="4"
+nmachines="2"
+nclients="1"
 nthreads="512"
 mem_pool_size_gb="20"
 num_memtable_partitions="64"

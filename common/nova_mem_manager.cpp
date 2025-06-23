@@ -70,7 +70,7 @@ namespace nova {
             slab_classes_[i].size = size;
             slab_classes_[i].nitems_per_slab = slab_size / size;
             if (pid == 0) {
-		    std::cout<<"로그 출력\n";    
+		std::cout<<"로그 출력\n";    
                 NOVA_LOG(INFO) << "slab class " << i << " size:" << size
                                << " nitems:"
                                << slab_size / size;
@@ -95,6 +95,7 @@ namespace nova {
             free_slabs_[i] = slab;
             slab_buf += slab_size;
         }
+	std::cout<<"NovaPartitionedMemManager 메소드 종료\n";
     }
 
     uint32_t NovaPartitionedMemManager::slabclassid(uint64_t size) {
@@ -183,6 +184,7 @@ namespace nova {
                                                   slab_size_mb));
             base += partition_size;
         }
+	std::cout<<"NovaMemManager 메소드 종료\n";
     }
 
     char *NovaMemManager::ItemAlloc(uint64_t key, uint32_t scid) {

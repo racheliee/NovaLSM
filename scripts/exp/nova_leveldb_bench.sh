@@ -32,7 +32,7 @@ nconn_workers="8"
 nasync_workers="8"
 ncompaction_workers="32"
 cache_size_gb="35"
-value_size="4096"
+value_size="1024"
 partition="range"
 lc_index_size_mb="10"
 index_size_mb="10"
@@ -177,10 +177,10 @@ function run_bench() {
 	do
 		echo "creating servers on $s"
 		nova_rdma_port=$((rdma_port))
-		cmd="stdbuf --output=0 --error=0 /nova/a/NovaLSM/leveldb_main --level=$level --l0_start_compaction_mb=$l0_start_compaction_mb --l0_stop_write_mb=$l0_stop_write_mb --sstable_mode=$sstable_mode --block_cache_mb=$block_cache_mb --db_path=$db_path --write_buffer_size_mb=$write_buffer_size_mb --persist_log_records_mode=$persist_log_record --log_buf_size=$log_buf_size --servers=$nova_servers --server_id=$server_id --recordcount=$recordcount --data_partition_alg=$partition --num_conn_workers=$nconn_workers --num_async_workers=$nasync_workers --num_compaction_workers=$ncompaction_workers --cache_size_gb=$cache_size_gb --use_fixed_value_size=$value_size --rdma_port=$nova_rdma_port --rdma_max_msg_size=$rdma_max_msg_size --rdma_max_num_sends=$rdma_max_num_sends --rdma_doorbell_batch_size=8 --rdma_pq_batch_size=8 --enable_rdma=$enable_rdma --config_path=$config_path --enable_load_data=true --profiler_file_path=$profiler_file_path --sstable_size_mb=$sstable_size_mb"
+		cmd="sudo stdbuf --output=0 --error=0 /nova/a/NovaLSM/leveldb_main --level=$level --l0_start_compaction_mb=$l0_start_compaction_mb --l0_stop_write_mb=$l0_stop_write_mb --sstable_mode=$sstable_mode --block_cache_mb=$block_cache_mb --db_path=$db_path --write_buffer_size_mb=$write_buffer_size_mb --persist_log_records_mode=$persist_log_record --log_buf_size=$log_buf_size --servers=$nova_servers --server_id=$server_id --recordcount=$recordcount --data_partition_alg=$partition --num_conn_workers=$nconn_workers --num_async_workers=$nasync_workers --num_compaction_workers=$ncompaction_workers --cache_size_gb=$cache_size_gb --use_fixed_value_size=$value_size --rdma_port=$nova_rdma_port --rdma_max_msg_size=$rdma_max_msg_size --rdma_max_num_sends=$rdma_max_num_sends --rdma_doorbell_batch_size=8 --rdma_pq_batch_size=8 --enable_rdma=$enable_rdma --config_path=$config_path --enable_load_data=true --profiler_file_path=$profiler_file_path --sstable_size_mb=$sstable_size_mb"
 		echo "$cmd"
 		
-		ssh $s "test -x $cache_bin_dir/leveldb_main && echo OK || echo 'ERROR: leveldb_main is missing or not executable'"
+		ssh $s "test -x /nova/a/NovaLSM/leveldb_main && echo OK || echo 'ERROR: leveldb_main is missing or not executable'"
 
 		ssh -oStrictHostKeyChecking=no $s "rm -rf $db_path && mkdir -p $db_path && cd $cache_bin_dir && $cmd >& $results/server-$s-out &" &
 		server_id=$((server_id+1))
@@ -215,7 +215,7 @@ function run_bench() {
 		for i in $(seq 1 $nclients_per_server);
 		do
 			echo "creating client on $c-$i"
-			cmd="stdbuf --output=0 --error=0 sudo bash $script_dir/exp/run_ycsb.sh $nthreads $nova_servers $debug $partition $recordcount $maxexecutiontime $dist $value_size $workload $config_path $cardinality $operationcount $zipfianconstant 0"
+			cmd="stdbuf --output=0 --error=0 sudo bash $script_dir/exp/run_ycsb.sh $nthreads eternity1:20209 $debug $partition $recordcount $maxexecutiontime $dist $value_size $workload $config_path $cardinality $operationcount $zipfianconstant 0"
 			echo "$cmd"
 			ssh $c "test -x $script_dir/exp/run_ycsb.sh && echo OK || echo MISSING or NO EXEC"			
 			ssh -oStrictHostKeyChecking=no $c "cd $client_bin_dir && $cmd >& $results/client-$c-$i-out &"
@@ -329,36 +329,57 @@ nranges_per_server="64"
 # cache_size_gb="1"
 # nranges_per_server="1"
 
-persist_log_record="none"
+persist_log_record="disk"
 ncompaction_workers="$nranges_per_server"
 
 zipfianconstant="0.99"
 dist="zipfian"
 
 nservers="1"
-nmachines="3"
+nmachines="2"
 
 nclients="1"
 nclients_per_server="5"
 nthreads="512"
 maxexecutiontime="600"
-for nranges_per_server in "1" #"64"
-do
-	l0_start_compaction_mb="4096"
-	l0_stop_write_mb=$((10*1024))
-	l0_start_compaction_mb=$((l0_start_compaction_mb/nranges_per_server))
-	l0_stop_write_mb=$((l0_stop_write_mb/nranges_per_server))
+#----------------진짜 설정----------------------------------------------
+nservers="1"
+nmachines="2"
+nclients="1"
+nclients_per_server="2"
+port="10725"
+rdma_port="20209"
+record_count="10000000"
+value_size="1024"
+dist="zipfian"
+zipfianconstant="0.99"
+workload="workloadw"
+maxexecutiontime="300"
+persist_log_record="disk"
+config_path="/nova/NovaLSM/config/nova-tutorial-config"
+l0_start_compaction_mb="4096"
+l0_stop_write_mb="10240"
 
-	for persist_log_record in "disk" #"none"
-	do
-		for dist in "uniform" #"zipfian" 
-		do
-			for workload in "workloadw" #"workloada" "workloade"
-			do
-			run_bench
-			done
-		done
-	done
-done
+
+#------------------------------------------------------------------------
+#for nranges_per_server in "1" #"64"
+#do
+#	l0_start_compaction_mb="4096"
+#	l0_stop_write_mb=$((10*1024))
+#	l0_start_compaction_mb=$((l0_start_compaction_mb/nranges_per_server))
+#	l0_stop_write_mb=$((l0_stop_write_mb/nranges_per_server))
+#
+#	for persist_log_record in "disk" #"none"
+#	do
+#		for dist in "uniform" #"zipfian" 
+#		do
+#			for workload in "workloadw" #"workloada" "workloade"
+#			do
+#			run_bench
+#			done
+#		done
+#	done
+#done
+run_bench
 
 python /nova/NovaLSM/scripts/exp/parse_ycsb_nova_leveldb.py $nmachines $exp_results_dir > stats_leveldb_servers_ranges_out_$recordcount

@@ -167,7 +167,9 @@ void StartServer() {
     }
     mkdirs(NovaConfig::config->stoc_files_path.data());
     mkdirs(NovaConfig::config->db_path.data());
+    std::cout<<"stoc_files_path, db_path directory 생성 완료\n";
     auto *mem_server = new NICServer(rdma_ctrl, buf, port);
+    std::cout<<"NICServer 객체 생성 완료\n";
     mem_server->Start();
 }
 

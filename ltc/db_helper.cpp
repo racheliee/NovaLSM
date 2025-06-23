@@ -165,7 +165,16 @@ namespace leveldb {
                                 const std::vector<leveldb::EnvBGThread *> &bg_flush_memtable_threads,
                                 leveldb::EnvBGThread *reorg_thread,
                                 leveldb::EnvBGThread *compaction_coord_thread) {
-        leveldb::EnvOptions env_option;
+        // by rachel,,,
+        if (cache == nullptr) {
+            NOVA_LOG(rdmaio::DEBUG) << fmt::format("Create Database: cache is nullptr (db_index{})", db_index);
+            abort();
+        }
+        assert(memtable_pool != nullptr && "memtable_pool was nullptr");
+        assert(mem_manager != nullptr && "mem_manager was nullptr");
+        assert(stoc_client != nullptr && "stoc_client was nullptr");
+        // end of rachel
+	leveldb::EnvOptions env_option;
         env_option.sstable_mode = leveldb::NovaSSTableMode::SSTABLE_MEM;
         leveldb::PosixEnv *env = new leveldb::PosixEnv;
         env->set_env_option(env_option);
@@ -182,10 +191,22 @@ namespace leveldb {
         leveldb::Logger *log = nullptr;
         std::string db_path = nova::DBName(nova::NovaConfig::config->db_path, db_index);
         nova::mkdirs(db_path.c_str());
-        NOVA_ASSERT(env->NewLogger(db_path + "/LOG-" + std::to_string(db_index), &log).ok());
-        options.info_log = log;
-        leveldb::Status status = leveldb::DB::Open(options, db_path, &db);
-        NOVA_ASSERT(status.ok()) << "Open leveldb failed " << status.ToString();
+	// 여기서부터 연우 시작 
+	leveldb::Status status = env->NewLogger(db_path + "/LOG-" + std::to_string(db_index), &log);
+        if(!status.ok()) {
+	    std::cerr << "Failed to create logger at path: " << db_path
+		    << " — " << status.ToString() << std::endl;
+	    abort();
+	}
+        // 여기서 ASSERT에서 에러가 나는거 같음...!! (연우가...)
+	//NOVA_ASSERT(env->NewLogger(db_path + "/LOG-" + std::to_string(db_index), &log).ok());
+        // 여기까지 연우 
+	options.info_log = log;
+        // again rachel!!
+	// leveldb::Status status = leveldb::DB::Open(options, db_path, &db);
+        status = leveldb::DB::Open(options, db_path, &db);
+	// rachel gone!!!
+	NOVA_ASSERT(status.ok()) << "Open leveldb failed " << status.ToString();
         return db;
     }
 }

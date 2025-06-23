@@ -334,7 +334,11 @@ exp_seconds_to_fail_stoc="-1"
 fail_stoc_id="-1"
 
 number_of_ltcs="3"
-nservers="5"
+nservers="1"
+nmachines="3"
+
+nclients="1"
+nclients_per_server="5"
 num_memtable_partitions="64"
 dist="uniform"
 num_sstable_replicas="1"

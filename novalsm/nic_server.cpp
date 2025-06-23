@@ -71,9 +71,22 @@ namespace nova {
             NOVA_LOG(INFO) << fmt::format("t[{}] Insert range {} to {}", tid_,
                                           frags[i]->range.key_start,
                                           frags[i]->range.key_end);
-            for (uint64_t j = frags[i]->range.key_end - 1;
-                 j >= frags[i]->range.key_start; j--) {
-                auto v = static_cast<char>((j % 10) + 'a');
+	    // 연우가 추가함..!!
+
+            if (frags[i]->range.key_start >= frags[i]->range.key_end) {
+                   NOVA_LOG(WARNING) << fmt::format("Skipping empty range: {} to {}", 
+                                     frags[i]->range.key_start, 
+                                     frags[i]->range.key_end);
+    			loaded_frags++;
+		    i = (i + 1) % frags.size();
+   		 continue;
+            }  
+	    for (uint64_t j = frags[i]->range.key_end; j-- > frags[i]->range.key_start;) {
+
+	   // for (uint64_t j = frags[i]->range.key_end - 1;
+           //      j >= frags[i]->range.key_start; j--) {
+              // 여기까지 연우
+		auto v = static_cast<char>((j % 10) + 'a');
 
                 std::string key(std::to_string(j));
                 std::string val(
@@ -93,7 +106,24 @@ namespace nova {
                 // DO NOT update subranges since this is not the actual workload.
                 option.is_loading_db = true;
 
-                leveldb::Status s = db->Put(option, key, val);
+		// 연우 
+                if (!db) {
+		    NOVA_LOG(ERROR) << "DB is null, skipping insert";
+		    break;
+		}	
+		assert(db != nullptr && "DB pointer is null!");
+		assert(frags[i] != nullptr && "Fragment is null!");
+		assert(NovaConfig::config != nullptr && "Config is null!");
+		assert(NovaConfig::config->load_default_value_size > 0 && 
+	        NovaConfig::config->load_default_value_size < 1024 * 1024 &&
+      								 "Suspicious default value size!");
+
+		NOVA_LOG(INFO) << fmt::format("db ptr: {}, frag ptr: {}, value size: {}",
+                               static_cast<void *>(db),
+                               static_cast<void *>(frags[i]),
+                               NovaConfig::config->load_default_value_size);
+		// 여기까지 연우 ...
+		leveldb::Status s = db->Put(option, key, val);
                 NOVA_ASSERT(s.ok());
                 loaded_keys++;
                 if (loaded_keys % 100000 == 0) {
@@ -305,6 +335,7 @@ namespace nova {
                 bg_compaction_threads.push_back(bg);
             }
         }
+	std::cout<<"Compaction Thread 할당 완료\n";
 
         leveldb::Cache *block_cache = nullptr;
         leveldb::Cache *row_cache = nullptr;
@@ -331,6 +362,7 @@ namespace nova {
         leveldb::StocPersistentFileManager *stoc_file_manager = new leveldb::StocPersistentFileManager(env, mem_manager,
                                                                                                        NovaConfig::config->stoc_files_path,
                                                                                                        NovaConfig::config->max_stoc_file_size);
+
         std::vector<nova::RDMAMsgCallback *> rdma_threads;
         for (int db_index = 0; db_index < cfg->fragments.size(); db_index++) {
             if (NovaConfig::config->cfgs[0]->fragments[db_index]->ltc_server_id != NovaConfig::config->my_server_id) {
@@ -340,13 +372,16 @@ namespace nova {
             auto reorg = new leveldb::LTCCompactionThread(mem_manager);
             auto coord = new leveldb::LTCCompactionThread(mem_manager);
             auto client = new leveldb::StoCBlockClient(db_index, stoc_file_manager);
+	    std::cout<<"check point 3-2\n";
             dbs_.push_back(CreateDatabase(0, db_index, block_cache, pool, mem_manager, client, bg_compaction_threads,
                                           bg_flush_memtable_threads, reorg, coord));
         }
+	std::cout<<"check point 4\n";
         for (int db_index = 0; db_index < cfg->fragments.size(); db_index++) {
             NovaConfig::config->cfgs[0]->fragments[db_index]->db = dbs_[db_index];
         }
-
+	
+	std::cout<<"trying to assign request id space\n";
         // Assign request id space so that they won't conflict.
         int worker_id = 0;
         uint32_t max_req_id = UINT32_MAX - 1;
